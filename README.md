@@ -2,7 +2,9 @@
 
 ## Features
 
-Display CPU frequency, usage, memory consumption, and battery percentage remaining within the VSCode status bar.
+Display CPU frequency, usage, memory consumption, disk usage, and battery percentage remaining within the VSCode status bar. Disk usage is enabled by default and is shown in a compact, MobaXterm-style status-bar indicator for the partition that contains the current workspace.
+
+Hover any status-bar indicator for a detailed drilldown. CPU usage and frequency show every core, and disk usage lists every detected disk and partition.
 
 ## Screenshots
 
@@ -18,10 +20,10 @@ Just the system information node module.
 - `resmon.show.cpufreq`: Show CPU Frequency. This may just display a static frequency on Windows.
 - `resmon.show.mem`: Show consumed and total memory as a fraction.
 - `resmon.show.battery`: Show battery percentage remaining.
-- `resmon.show.disk`: Show disk space information.
+- `resmon.show.disk`: Show disk usage information.
 - `resmon.show.cputemp`: Show CPU temperature. May not work without the lm-sensors module on Linux. May require running VS Code as admin on Windows.
-- `resmon.disk.format`: Configures how the disk space is displayed (percentage remaining/used, absolute remaining, used out of totel).
-- `resmon.disk.drives`: Drives to show. For example, 'C:' on Windows, and '/dev/sda1' on Linux.
+- `resmon.disk.format`: Configures how disk usage is displayed (percentage used/free, absolute free, or used out of total). Defaults to `PercentUsed`.
+- `resmon.disk.drives`: Drives or mount points to show. Leave empty to monitor the partition containing the current workspace. For example, `C:` on Windows and `/` on Linux.
 - `resmon.updatefrequencyms`: How frequently to query systeminformation. The minimum is 200 ms as to prevent accidentally updating so fast as to freeze up your machine.
 - `resmon.freq.unit`: Unit used for the CPU frequency (GHz-Hz).
 - `resmon.mem.unit`: Unit used for the RAM consumption (GB-B).

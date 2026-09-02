@@ -2,7 +2,7 @@
     "name": "resourcemonitor",
     "displayName": "Resource Monitor",
     "description": "Displays current CPU stats, memory/disk consumption, and battery percentage remaining.",
-    "version": "1.0.7",
+    "version": "1.0.11",
     "publisher": "mutantdino",
     "engines": {
         "vscode": "^1.25.0"
@@ -46,8 +46,8 @@
                 },
                 "resmon.show.disk": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Toggles the display of disk space information."
+                    "default": true,
+                    "description": "Toggles the display of disk usage in the status bar."
                 },
                 "resmon.show.cputemp": {
                     "type": "boolean",
@@ -62,7 +62,8 @@
                         "Remaining",
                         "UsedOutOfTotal"
                     ],
-                    "description": "Configures how the disk space is displayed (percentage remaining/used, absolute remaining, used out of totel)."
+                    "default": "PercentUsed",
+                    "description": "Configures how disk usage is displayed (percentage used/free, absolute free, or used out of total)."
                 },
                 "resmon.disk.drives": {
                     "type": "array",
@@ -71,7 +72,7 @@
                     },
                     "uniqueItems": true,
                     "default": [],
-                    "description": "Drives to show. For example, 'C:' on Windows, and '/dev/sda1' on Linux."
+                    "description": "Drives or mount points to show. Leave empty to show the partition containing the current workspace. Examples: 'C:' on Windows and '/' on Linux."
                 },
                 "resmon.updatefrequencyms": {
                     "type": "number",
@@ -132,7 +133,6 @@
         "systeminformation": "^4.27.11"
     },
     "devDependencies": {
-        "systeminformation": "^4.27.11",
         "@types/mocha": "^2.2.42",
         "@types/node": "^7.0.43",
         "tslint": "^5.8.0",
