@@ -1,8 +1,8 @@
 {
-    "name": "resourcemonitor",
-    "displayName": "Resource Monitor",
+    "name": "resources-monitor",
+    "displayName": "Resources Monitor",
     "description": "Displays CPU, memory, disk, network, and battery statistics in the VS Code status bar.",
-    "version": "1.0.14",
+    "version": "1.0.15",
     "publisher": "RavidAmar",
     "engines": {
         "vscode": "^1.25.0"
@@ -24,12 +24,12 @@
         "commands": [
             {
                 "command": "resmon.openSettings",
-                "title": "Resource Monitor: Open Settings"
+                "title": "Resources Monitor: Open Settings"
             }
         ],
         "configuration": {
             "type": "object",
-            "title": "Resource Monitor",
+            "title": "Resources Monitor",
             "properties": {
                 "resmon.show.cpuusage": {
                     "type": "boolean",

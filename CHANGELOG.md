@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.0.15]
+- Renamed the extension and Marketplace identity to Resources Monitor (`RavidAmar.resources-monitor`).
+- Made the credit to Nick Anderson's original Resource Monitor project prominent in the README.
+
 ## [1.0.14]
 - Corrected the extension identity to the registered Marketplace publisher ID, `RavidAmar.resourcemonitor`.
 

@@ -12,7 +12,7 @@ interface ResourceDisplay {
 
 export function activate(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand('resmon.openSettings', () => {
-        return commands.executeCommand('workbench.action.openSettings', '@ext:RavidAmar.resourcemonitor');
+        return commands.executeCommand('workbench.action.openSettings', '@ext:RavidAmar.resources-monitor');
     }));
     var resourceMonitor: ResMon = new ResMon();
     resourceMonitor.StartUpdating();
@@ -54,7 +54,7 @@ abstract class Resource {
     protected async abstract getDisplay(): Promise<string>;
 
     protected async getTooltip(): Promise<string> {
-        return "Resource Monitor";
+        return "Resources Monitor";
     }
 
     protected async isShown(): Promise<boolean> {

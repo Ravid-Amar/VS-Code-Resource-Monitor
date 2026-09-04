@@ -7,7 +7,8 @@ let extensionPackage: any = require('../../package.json');
 describe('extension manifest', () => {
     it('uses the maintained fork extension identity', () => {
         assert.strictEqual(extensionPackage.publisher, 'RavidAmar');
-        assert.strictEqual(extensionPackage.name, 'resourcemonitor');
+        assert.strictEqual(extensionPackage.name, 'resources-monitor');
+        assert.strictEqual(extensionPackage.displayName, 'Resources Monitor');
     });
 
     it('points users to the maintained repository', () => {
@@ -23,7 +24,7 @@ describe('extension manifest', () => {
         })[0];
 
         assert.ok(command);
-        assert.strictEqual(command.title, 'Resource Monitor: Open Settings');
+        assert.strictEqual(command.title, 'Resources Monitor: Open Settings');
         assert.ok(extensionPackage.activationEvents.indexOf('onCommand:resmon.openSettings') !== -1);
     });
 
