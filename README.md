@@ -1,6 +1,6 @@
-# Resources Monitor
+# System Metrics Lens
 
-> **Original project credit:** **Resources Monitor is a maintained fork of [Resource Monitor by Nick Anderson (Njanderson)](https://github.com/Njanderson/resmon).** This extension builds on Nick Anderson's work and the contributions of the original project's contributors.
+> **Original project credit:** **System Metrics Lens is a maintained fork of [Resource Monitor by Nick Anderson (Njanderson)](https://github.com/Njanderson/resmon).** This extension builds on Nick Anderson's work and the contributions of the original project's contributors.
 
 [![CI](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor/actions/workflows/nodejs.yml/badge.svg)](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor/actions/workflows/nodejs.yml)
 
@@ -16,7 +16,7 @@ Hover any status-bar indicator for a detailed drilldown. CPU usage and frequency
 
 ## Screenshots
 
-![Resources Monitor status-bar preview showing CPU, memory, disk, and network statistics](images/status-bar-preview.png)
+![System Metrics Lens status-bar preview showing CPU, memory, disk, and network statistics](images/status-bar-preview.png)
 
 ## Requirements
 
@@ -39,9 +39,9 @@ There are no external runtime dependencies to install. Windows CPU readings use 
 - `resmon.mem.unit`: Unit used for the RAM consumption (GB-B).
 - `resmon.alignLeft`: Toggles the alignment of the status bar.
 - `resmon.color`: Color of the status bar text in hex code (for example, #FFFFFF is white). The color must be in the format #RRGGBB, using hex digits.
-- `Resources Monitor: Open Settings`: Open Resources Monitor settings from the Command Palette.
+- `System Metrics Lens: Open Settings`: Open System Metrics Lens settings from the Command Palette.
 
-Open the Command Palette with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on macOS), then run **Resources Monitor: Open Settings**.
+Open the Command Palette with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on macOS), then run **System Metrics Lens: Open Settings**.
 
 ## Development
 

@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.16]
+- Changed the display name to System Metrics Lens to distinguish it clearly from similarly named Marketplace extensions.
+
 ## [1.0.15]
 - Renamed the extension and Marketplace identity to Resources Monitor (`RavidAmar.resources-monitor`).
 - Made the credit to Nick Anderson's original Resource Monitor project prominent in the README.

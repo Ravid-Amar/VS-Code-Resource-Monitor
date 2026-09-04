@@ -8,7 +8,7 @@ describe('extension manifest', () => {
     it('uses the maintained fork extension identity', () => {
         assert.strictEqual(extensionPackage.publisher, 'RavidAmar');
         assert.strictEqual(extensionPackage.name, 'resources-monitor');
-        assert.strictEqual(extensionPackage.displayName, 'Resources Monitor');
+        assert.strictEqual(extensionPackage.displayName, 'System Metrics Lens');
     });
 
     it('points users to the maintained repository', () => {
@@ -24,7 +24,7 @@ describe('extension manifest', () => {
         })[0];
 
         assert.ok(command);
-        assert.strictEqual(command.title, 'Resources Monitor: Open Settings');
+        assert.strictEqual(command.title, 'System Metrics Lens: Open Settings');
         assert.ok(extensionPackage.activationEvents.indexOf('onCommand:resmon.openSettings') !== -1);
     });
 

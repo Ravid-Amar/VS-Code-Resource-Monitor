@@ -1,8 +1,8 @@
 {
     "name": "resources-monitor",
-    "displayName": "Resources Monitor",
+    "displayName": "System Metrics Lens",
     "description": "Displays CPU, memory, disk, network, and battery statistics in the VS Code status bar.",
-    "version": "1.0.15",
+    "version": "1.0.16",
     "publisher": "RavidAmar",
     "engines": {
         "vscode": "^1.25.0"
@@ -24,12 +24,12 @@
         "commands": [
             {
                 "command": "resmon.openSettings",
-                "title": "Resources Monitor: Open Settings"
+                "title": "System Metrics Lens: Open Settings"
             }
         ],
         "configuration": {
             "type": "object",
-            "title": "Resources Monitor",
+            "title": "System Metrics Lens",
             "properties": {
                 "resmon.show.cpuusage": {
                     "type": "boolean",

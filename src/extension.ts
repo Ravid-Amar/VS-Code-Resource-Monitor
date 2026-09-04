@@ -54,7 +54,7 @@ abstract class Resource {
     protected async abstract getDisplay(): Promise<string>;
 
     protected async getTooltip(): Promise<string> {
-        return "Resources Monitor";
+        return "System Metrics Lens";
     }
 
     protected async isShown(): Promise<boolean> {
