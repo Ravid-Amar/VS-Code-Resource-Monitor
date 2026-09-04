@@ -2,8 +2,8 @@
     "name": "resourcemonitor",
     "displayName": "Resource Monitor",
     "description": "Displays CPU, memory, disk, network, and battery statistics in the VS Code status bar.",
-    "version": "1.0.12",
-    "publisher": "mutantdino",
+    "version": "1.0.13",
+    "publisher": "ravid-amar",
     "engines": {
         "vscode": "^1.25.0"
     },

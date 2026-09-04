@@ -4,6 +4,8 @@
 
 This fork is maintained at [Ravid-Amar/VS-Code-Resource-Monitor](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor). It is based on [Njanderson/resmon](https://github.com/Njanderson/resmon); credit and thanks go to Nick Anderson and the original contributors.
 
+The maintained extension ID is `ravid-amar.resourcemonitor`. It is intentionally distinct from the original Marketplace ID so VS Code uses this fork's metadata and repository links.
+
 ## Features
 
 Display CPU frequency, usage, memory consumption, disk usage, network inbound/outbound rates, and battery percentage remaining within the VSCode status bar. Disk usage is enabled by default and is shown in a compact, MobaXterm-style status-bar indicator for the partition that contains the current workspace.

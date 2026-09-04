@@ -5,6 +5,11 @@ import * as assert from 'assert';
 let extensionPackage: any = require('../../package.json');
 
 describe('extension manifest', () => {
+    it('uses the maintained fork extension identity', () => {
+        assert.strictEqual(extensionPackage.publisher, 'ravid-amar');
+        assert.strictEqual(extensionPackage.name, 'resourcemonitor');
+    });
+
     it('points users to the maintained repository', () => {
         assert.strictEqual(
             extensionPackage.repository.url,
