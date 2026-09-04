@@ -1,5 +1,8 @@
 # Change Log
 
+## [Unreleased]
+- Replaced the deprecated `vscode` development package and its network-dependent postinstall step with VS Code 1.25 type definitions.
+
 ## [1.0.12]
 - Added network inbound/outbound rates with per-interface hover details.
 - Added a Command Palette command to open Resource Monitor settings.
