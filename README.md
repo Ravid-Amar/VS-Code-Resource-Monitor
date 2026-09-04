@@ -1,5 +1,7 @@
 # Resource Monitor
 
+[![CI](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor/actions/workflows/nodejs.yml/badge.svg)](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor/actions/workflows/nodejs.yml)
+
 This fork is maintained at [Ravid-Amar/VS-Code-Resource-Monitor](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor). It is based on [Njanderson/resmon](https://github.com/Njanderson/resmon); credit and thanks go to Nick Anderson and the original contributors.
 
 ## Features
