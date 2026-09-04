@@ -1,6 +1,7 @@
 'use strict';
-import { window, ExtensionContext, StatusBarAlignment, StatusBarItem, workspace, WorkspaceConfiguration } from 'vscode';
+import { window, commands, ExtensionContext, StatusBarAlignment, StatusBarItem, workspace, WorkspaceConfiguration } from 'vscode';
 import { Units, DiskSpaceFormat, DiskSpaceFormatMappings, FreqMappings, MemMappings } from './constants';
+import { CpuUsageSample, NetworkCounters, calculateNetworkRate, formatNetworkDisplay, formatNetworkRate, normalizeCpuLoad, parseWindowsProcessorUtility } from './metrics';
 
 var si = require('systeminformation');
 
@@ -10,6 +11,9 @@ interface ResourceDisplay {
 }
 
 export function activate(context: ExtensionContext) {
+    context.subscriptions.push(commands.registerCommand('resmon.openSettings', () => {
+        return commands.executeCommand('workbench.action.openSettings', '@ext:mutantdino.resourcemonitor');
+    }));
     var resourceMonitor: ResMon = new ResMon();
     resourceMonitor.StartUpdating();
     context.subscriptions.push(resourceMonitor);
@@ -71,20 +75,88 @@ abstract class Resource {
 }
 
 class CpuUsage extends Resource {
+    private _sample: CpuUsageSample | null = null;
+    private _windowsSample: CpuUsageSample | null = null;
+    private _windowsSampleTime: number = 0;
+    private _nextWindowsSampleAttempt: number = 0;
 
     constructor(config: WorkspaceConfiguration) {
         super(config, true, "cpuusage");
     }
 
-    async getDisplay(): Promise<string> {
+    private getWindowsProcessorUtility(): Promise<CpuUsageSample | null> {
+        if (process.platform !== "win32") {
+            return Promise.resolve(null);
+        }
+
+        let now = Date.now();
+        // Windows performance counters are intended for sampling no more than
+        // once per second. Reuse the latest value when a faster refresh rate is
+        // configured, and avoid repeatedly launching PowerShell after a failure.
+        if (this._windowsSample && now - this._windowsSampleTime < 1000) {
+            return Promise.resolve(this._windowsSample);
+        }
+        if (now < this._nextWindowsSampleAttempt) {
+            return Promise.resolve(null);
+        }
+
+        let childProcess = require("child_process");
+        let command = "$ErrorActionPreference='Stop'; " +
+            "Get-CimInstance -ClassName Win32_PerfFormattedData_Counters_ProcessorInformation " +
+            "| Select-Object Name,PercentProcessorUtility | ConvertTo-Json -Compress";
+
+        return new Promise<CpuUsageSample | null>((resolve) => {
+            childProcess.execFile("powershell.exe", ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command],
+                { timeout: 3000 }, (error: any, stdout: string) => {
+                    if (error || !stdout.trim()) {
+                        this._nextWindowsSampleAttempt = Date.now() + 60000;
+                        resolve(null);
+                        return;
+                    }
+
+                    try {
+                        let sample = parseWindowsProcessorUtility(stdout);
+                        this._windowsSample = sample;
+                        this._windowsSampleTime = Date.now();
+                        this._nextWindowsSampleAttempt = 0;
+                        resolve(sample);
+                    } catch (parseError) {
+                        this._nextWindowsSampleAttempt = Date.now() + 60000;
+                        resolve(null);
+                    }
+                });
+        });
+    }
+
+    private async sampleCpuUsage(): Promise<CpuUsageSample> {
+        let windowsSample = await this.getWindowsProcessorUtility();
+        if (windowsSample) {
+            return windowsSample;
+        }
+
         let currentLoad = await si.currentLoad();
-        return `$(pulse) ${(100 - currentLoad.currentload_idle).toFixed(this.getPrecision())}%`;
+        return {
+            total: normalizeCpuLoad(Number(currentLoad.currentload)),
+            cores: (currentLoad.cpus || []).map((cpu: any, index: number) => ({
+                name: `Core ${index + 1}`,
+                load: normalizeCpuLoad(Number(cpu.load))
+            })),
+            source: process.platform === "win32" ? "Processor time fallback" : "Processor time"
+        };
+    }
+
+    async getDisplay(): Promise<string> {
+        this._sample = await this.sampleCpuUsage();
+        return `$(pulse) ${this._sample.total.toFixed(this.getPrecision())}%`;
     }
 
     protected async getTooltip(): Promise<string> {
-        let currentLoad = await si.currentLoad();
-        let coreLoads = (currentLoad.cpus || []).map((cpu: any, index: number) => `Core ${index + 1}: ${cpu.load.toFixed(this.getPrecision())}%`);
-        return `CPU usage\nTotal: ${(100 - currentLoad.currentload_idle).toFixed(this.getPrecision())}%\n\nPer core:\n${coreLoads.join("\n")}`;
+        if (!this._sample) {
+            this._sample = await this.sampleCpuUsage();
+        }
+        let coreLoads = this._sample.cores.map(core => `${core.name}: ${core.load.toFixed(this.getPrecision())}%`);
+        let perCore = coreLoads.length > 0 ? `\n\nPer core:\n${coreLoads.join("\n")}` : "";
+        return `CPU usage\nTotal: ${this._sample.total.toFixed(this.getPrecision())}%\nSource: ${this._sample.source}${perCore}`;
     }
 
 }
@@ -246,7 +318,7 @@ class Memory extends Resource {
     }
     
     async getDisplay() : Promise<string> {
-        let unit = this._config.get('memunit', "GB");
+        let unit = this._config.get('mem.unit', "GB");
         var memDivisor = MemMappings[unit];
         let memoryData = await si.mem();
         let memoryUsedWithUnits = memoryData.active / memDivisor;
@@ -268,27 +340,81 @@ class Memory extends Resource {
 }
 
 class Network extends Resource {
+    private _previousSamples: { [interfaceName: string]: NetworkCounters } = {};
+    private _rates: { [interfaceName: string]: { rx: number; tx: number } } = {};
+    private _sampleAvailable: boolean = false;
 
     constructor(config: WorkspaceConfiguration) {
         super(config, true, "net");
-    
-        // Network stats are requested through returning the delta between
-        // multiple invocations
-        this.getInterfaceStats();
     }
 
-    async getInterfaceStats() : Promise<any> {
-        let networkInterfaces = await si.networkInterfaces();
-        for (let networkInterface in networkInterfaces) {
-            console.log(networkInterface);
-            let networkStats = await si.networkStats(networkInterface);
-            console.log(networkStats);
+    private formatRate(bytesPerSecond: number): string {
+        return formatNetworkRate(bytesPerSecond, this.getPrecision());
+    }
+
+    private getConfiguredInterface(): string {
+        return this._config.get('net.interface', "");
+    }
+
+    private async getInterfaceStats(): Promise<any[]> {
+        this._sampleAvailable = false;
+        let networkInterfaces: any;
+        try {
+            networkInterfaces = await si.networkInterfaces();
+        } catch (error) {
+            return [];
         }
+
+        let interfaceNames: string[] = Array.isArray(networkInterfaces) ?
+            networkInterfaces.map((networkInterface: any) => networkInterface.iface).filter((name: string) => !!name) :
+            Object.keys(networkInterfaces);
+        let configuredInterface = this.getConfiguredInterface();
+        if (configuredInterface) {
+            interfaceNames = interfaceNames.filter(name => name === configuredInterface);
+        }
+
+        let now = Date.now();
+        let stats: any[] = [];
+        for (let interfaceName of interfaceNames) {
+            try {
+                let rawStats = await si.networkStats(interfaceName);
+                let networkStats = Array.isArray(rawStats) ? rawStats[0] : rawStats;
+                if (!networkStats) {
+                    continue;
+                }
+                let rx = Number(networkStats.rx_bytes) || 0;
+                let tx = Number(networkStats.tx_bytes) || 0;
+                let current = { rx: rx, tx: tx, time: now };
+                let rate = calculateNetworkRate(this._previousSamples[interfaceName], current);
+                this._previousSamples[interfaceName] = current;
+                this._rates[interfaceName] = rate;
+                stats.push({ name: interfaceName, rx: rate.rx, tx: rate.tx });
+            } catch (error) {
+                // A single unavailable interface must not stop other resources.
+            }
+        }
+        this._sampleAvailable = stats.length > 0;
+        return stats;
     }
 
     async getDisplay(): Promise<string> {
-        // Not implemented
-        return ""; 
+        let stats = await this.getInterfaceStats();
+        // Keep the item present if an individual poll fails. Returning an empty
+        // string causes the status-bar manager to hide it until a later update.
+        return formatNetworkDisplay(stats, this.getPrecision());
+    }
+
+    protected async getTooltip(): Promise<string> {
+        let interfaceNames = Object.keys(this._rates);
+        if (interfaceNames.length === 0) {
+            return "Network I/O\nInbound: 0 B/s\nOutbound: 0 B/s\n\nInterface statistics unavailable";
+        }
+        let lines = interfaceNames.map(interfaceName => {
+            let rate = this._rates[interfaceName];
+            return `${interfaceName}\n  Inbound ↑: ${this.formatRate(rate.rx)}\n  Outbound ↓: ${this.formatRate(rate.tx)}`;
+        });
+        let availability = this._sampleAvailable ? "" : "\n\nLatest interface sample unavailable";
+        return `Network I/O\n${lines.join("\n\n")}${availability}`;
     }
 }
 

@@ -1,8 +1,8 @@
 {
     "name": "resourcemonitor",
     "displayName": "Resource Monitor",
-    "description": "Displays current CPU stats, memory/disk consumption, and battery percentage remaining.",
-    "version": "1.0.11",
+    "description": "Displays CPU, memory, disk, network, and battery statistics in the VS Code status bar.",
+    "version": "1.0.12",
     "publisher": "mutantdino",
     "engines": {
         "vscode": "^1.25.0"
@@ -16,10 +16,17 @@
         "theme": "dark"
     },
     "activationEvents": [
-        "*"
+        "*",
+        "onCommand:resmon.openSettings"
     ],
     "main": "./out/extension",
     "contributes": {
+        "commands": [
+            {
+                "command": "resmon.openSettings",
+                "title": "Resource Monitor: Open Settings"
+            }
+        ],
         "configuration": {
             "type": "object",
             "title": "Resource Monitor",
@@ -48,6 +55,16 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Toggles the display of disk usage in the status bar."
+                },
+                "resmon.show.net": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggles display of network inbound and outbound rates."
+                },
+                "resmon.net.interface": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Network interface to monitor. Leave empty to aggregate all interfaces."
                 },
                 "resmon.show.cputemp": {
                     "type": "boolean",
@@ -121,11 +138,18 @@
         }
     },
     "repository": {
-        "url": "https://github.com/Njanderson/resmon.git"
+        "type": "git",
+        "url": "https://github.com/Ravid-Amar/VS-Code-Resource-Monitor.git"
+    },
+    "homepage": "https://github.com/Ravid-Amar/VS-Code-Resource-Monitor#readme",
+    "bugs": {
+        "url": "https://github.com/Ravid-Amar/VS-Code-Resource-Monitor/issues"
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
+        "test": "npm run compile && mocha \"out/test/**/*.test.js\"",
+        "verify:data": "npm run compile && node scripts/verify-data.js",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "watch": "tsc -watch -p ./"
     },
@@ -135,6 +159,7 @@
     "devDependencies": {
         "@types/mocha": "^2.2.42",
         "@types/node": "^7.0.43",
+        "mocha": "^5.2.0",
         "tslint": "^5.8.0",
         "typescript": "^2.6.1",
         "vscode": "^1.1.6"

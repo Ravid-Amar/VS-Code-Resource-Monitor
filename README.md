@@ -1,26 +1,30 @@
 # Resource Monitor
 
+This fork is maintained at [Ravid-Amar/VS-Code-Resource-Monitor](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor). It is based on [Njanderson/resmon](https://github.com/Njanderson/resmon); credit and thanks go to Nick Anderson and the original contributors.
+
 ## Features
 
-Display CPU frequency, usage, memory consumption, disk usage, and battery percentage remaining within the VSCode status bar. Disk usage is enabled by default and is shown in a compact, MobaXterm-style status-bar indicator for the partition that contains the current workspace.
+Display CPU frequency, usage, memory consumption, disk usage, network inbound/outbound rates, and battery percentage remaining within the VSCode status bar. Disk usage is enabled by default and is shown in a compact, MobaXterm-style status-bar indicator for the partition that contains the current workspace.
 
 Hover any status-bar indicator for a detailed drilldown. CPU usage and frequency show every core, and disk usage lists every detected disk and partition.
 
 ## Screenshots
 
-![Disk space feature](images/disk_space_screenshot.png).
+![Resource Monitor status-bar preview showing CPU, memory, disk, and network statistics](images/status-bar-preview.png)
 
 ## Requirements
 
-Just the system information node module.
+There are no external runtime dependencies to install. Windows CPU readings use built-in PowerShell and CIM when available.
 
 ## Extension Settings
 
-- `resmon.show.cpuusage`: Show CPU Usage. In Windows, this percentage is calculated with processor time, which doesn't quite match the task manager figure.
+- `resmon.show.cpuusage`: Show CPU usage. On Windows, the extension uses the Processor Utility counter so the value follows Task Manager's CPU calculation; if that counter is unavailable, it falls back to processor time.
 - `resmon.show.cpufreq`: Show CPU Frequency. This may just display a static frequency on Windows.
 - `resmon.show.mem`: Show consumed and total memory as a fraction.
 - `resmon.show.battery`: Show battery percentage remaining.
 - `resmon.show.disk`: Show disk usage information.
+- `resmon.show.net`: Show network inbound and outbound rates.
+- `resmon.net.interface`: Network interface to monitor. Leave empty to aggregate all interfaces.
 - `resmon.show.cputemp`: Show CPU temperature. May not work without the lm-sensors module on Linux. May require running VS Code as admin on Windows.
 - `resmon.disk.format`: Configures how disk usage is displayed (percentage used/free, absolute free, or used out of total). Defaults to `PercentUsed`.
 - `resmon.disk.drives`: Drives or mount points to show. Leave empty to monitor the partition containing the current workspace. For example, `C:` on Windows and `/` on Linux.
@@ -29,42 +33,18 @@ Just the system information node module.
 - `resmon.mem.unit`: Unit used for the RAM consumption (GB-B).
 - `resmon.alignLeft`: Toggles the alignment of the status bar.
 - `resmon.color`: Color of the status bar text in hex code (for example, #FFFFFF is white). The color must be in the format #RRGGBB, using hex digits.
+- `Resource Monitor: Open Settings`: Open Resource Monitor settings from the Command Palette.
 
-## Known Issues
+Open the Command Palette with <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on macOS), then run **Resource Monitor: Open Settings**.
 
-A better solution for Windows CPU Usage would be great. I investigated alternatives to counting Processor Time, but none of them seemed to match the Task Manager percentage.
+## Development
 
----
+```bash
+npm ci
+npm test
+npm run verify:data
+```
 
-## Change Log
+`npm test` runs deterministic unit and manifest tests. `npm run verify:data` performs a live sanity check against the current machine's CPU, memory, filesystem, and network data sources.
 
-### [1.0.7]
-- Changed underlying CPU frequency API, added hiding battery/CPU temp information if the device lacks a battery/doesn't support CPU temp sensing, added some clarifications about CPU frequency behavior on Windows.
-
-### [1.0.6]
-
-- Added DiskSpace, CPU Temperature. Adjusted battery icon.
-
-### [1.0.5]
-
-- Refactored code heavily, addressed Github issue with memory.used versus memory.active.
-
-### [1.0.4]
-
-- Added icon for store.
-
-### [1.0.3]
-
-- Changed icons. Added choosable units.
-
-### [1.0.2]
-
-- Actually properly added systeminformation as a real dependency.
-
-### [1.0.1]
-
-- Properly added systeminformation as a real dependency
-
-### [1.0.0]
-
-- Initial release
+See [CHANGELOG.md](CHANGELOG.md) for release history.

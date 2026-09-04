@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.0.12]
+- Added network inbound/outbound rates with per-interface hover details.
+- Added a Command Palette command to open Resource Monitor settings.
+- Changed Windows CPU usage to the Processor Utility counter used by Task Manager, with a processor-time fallback.
+- Reused one CPU sample for the status bar and tooltip to prevent back-to-back sampling from distorting load values.
+- Added automated unit tests for CPU and network metric calculations and wired them into CI.
+- Added live CPU, memory, disk, and network data verification.
+- Fixed the memory-unit setting lookup and refreshed repository metadata, CI, and screenshots.
+
 ## [1.0.11]
 - Added hover drilldowns for each status-bar resource, including per-core CPU details and all detected disks and partitions.
 
