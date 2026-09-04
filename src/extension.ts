@@ -12,7 +12,7 @@ interface ResourceDisplay {
 
 export function activate(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand('resmon.openSettings', () => {
-        return commands.executeCommand('workbench.action.openSettings', '@ext:ravid-amar.resourcemonitor');
+        return commands.executeCommand('workbench.action.openSettings', '@ext:RavidAmar.resourcemonitor');
     }));
     var resourceMonitor: ResMon = new ResMon();
     resourceMonitor.StartUpdating();

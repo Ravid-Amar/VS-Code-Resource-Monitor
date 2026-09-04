@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.14]
+- Corrected the extension identity to the registered Marketplace publisher ID, `RavidAmar.resourcemonitor`.
+
 ## [1.0.13]
 - Changed the extension identity to `ravid-amar.resourcemonitor` so VS Code no longer resolves the original Marketplace listing and repository link.
 - Replaced the deprecated `vscode` development package and its network-dependent postinstall step with VS Code 1.25 type definitions.

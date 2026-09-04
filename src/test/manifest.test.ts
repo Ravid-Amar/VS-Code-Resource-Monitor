@@ -6,7 +6,7 @@ let extensionPackage: any = require('../../package.json');
 
 describe('extension manifest', () => {
     it('uses the maintained fork extension identity', () => {
-        assert.strictEqual(extensionPackage.publisher, 'ravid-amar');
+        assert.strictEqual(extensionPackage.publisher, 'RavidAmar');
         assert.strictEqual(extensionPackage.name, 'resourcemonitor');
     });
 

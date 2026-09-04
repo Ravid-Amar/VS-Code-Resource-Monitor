@@ -4,7 +4,7 @@
 
 This fork is maintained at [Ravid-Amar/VS-Code-Resource-Monitor](https://github.com/Ravid-Amar/VS-Code-Resource-Monitor). It is based on [Njanderson/resmon](https://github.com/Njanderson/resmon); credit and thanks go to Nick Anderson and the original contributors.
 
-The maintained extension ID is `ravid-amar.resourcemonitor`. It is intentionally distinct from the original Marketplace ID so VS Code uses this fork's metadata and repository links.
+The maintained extension ID is `RavidAmar.resourcemonitor`. It is intentionally distinct from the original Marketplace ID so VS Code uses this fork's metadata and repository links.
 
 ## Features
 
