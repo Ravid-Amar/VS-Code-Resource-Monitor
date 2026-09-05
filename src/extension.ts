@@ -1,7 +1,7 @@
 'use strict';
 import { window, commands, ExtensionContext, StatusBarAlignment, StatusBarItem, workspace, WorkspaceConfiguration } from 'vscode';
 import { Units, DiskSpaceFormat, DiskSpaceFormatMappings, FreqMappings, MemMappings } from './constants';
-import { CpuUsageSample, NetworkCounters, calculateNetworkRate, formatNetworkDisplay, formatNetworkRate, normalizeCpuLoad, parseWindowsProcessorUtility } from './metrics';
+import { CpuUsageSample, GpuMetrics, NetworkCounters, calculateNetworkRate, formatGpuDisplay, formatGpuTooltip, formatNetworkDisplay, formatNetworkRate, normalizeCpuLoad, normalizeGpuControllers, parseWindowsGpuCounters, parseWindowsProcessorUtility, readCpuCurrentSpeed } from './metrics';
 
 var si = require('systeminformation');
 
@@ -33,19 +33,24 @@ abstract class Resource {
     }
 
     public async getResourceDisplay(): Promise<ResourceDisplay | null> {
-        if (await this.isShown())
-        {
-            let display: string = await this.getDisplay();
-            if (!display) {
-                return null;
-            }
-            this._maxWidth = Math.max(this._maxWidth, display.length);
+        try {
+            if (await this.isShown())
+            {
+                let display: string = await this.getDisplay();
+                if (!display) {
+                    return null;
+                }
+                this._maxWidth = Math.max(this._maxWidth, display.length);
 
-            // Pad out to the correct length such that the length doesn't change
-            return {
-                text: display.padEnd(this._maxWidth, ' '),
-                tooltip: await this.getTooltip()
-            };
+                // Pad out to the correct length such that the length doesn't change
+                return {
+                    text: display.padEnd(this._maxWidth, ' '),
+                    tooltip: await this.getTooltip()
+                };
+            }
+        } catch (error) {
+            // A missing sensor or transient platform command must only hide the
+            // affected resource; it must not stop every status item from updating.
         }
 
         return null;
@@ -136,7 +141,7 @@ class CpuUsage extends Resource {
 
         let currentLoad = await si.currentLoad();
         return {
-            total: normalizeCpuLoad(Number(currentLoad.currentload)),
+            total: normalizeCpuLoad(Number(currentLoad.currentLoad !== undefined ? currentLoad.currentLoad : currentLoad.currentload)),
             cores: (currentLoad.cpus || []).map((cpu: any, index: number) => ({
                 name: `Core ${index + 1}`,
                 load: normalizeCpuLoad(Number(cpu.load))
@@ -170,7 +175,7 @@ class CpuTemp extends Resource {
     protected async isShown(): Promise<boolean> {
         // If the CPU temp sensor cannot retrieve a valid temperature, disallow its reporting.
         var cpuTemp = (await si.cpuTemperature()).main;
-        let hasCpuTemp = cpuTemp !== -1;
+        let hasCpuTemp = cpuTemp !== null && cpuTemp !== undefined && isFinite(Number(cpuTemp)) && Number(cpuTemp) >= 0;
         return Promise.resolve(hasCpuTemp && this._config.get("show.cputemp", true));
     }
 
@@ -240,7 +245,7 @@ class CpuFreq extends Resource {
     }
 
     private async getCurrentSpeedHz(): Promise<number> {
-        let cpuCurrentSpeed = await si.cpuCurrentspeed();
+        let cpuCurrentSpeed = await readCpuCurrentSpeed(si);
         // systeminformation returns frequency in terms of GHz by default.
         let speedHz = parseFloat(cpuCurrentSpeed.avg) * Units.G;
         if (isNaN(speedHz) || speedHz <= 0) {
@@ -259,7 +264,7 @@ class CpuFreq extends Resource {
     }
 
     protected async getTooltip(): Promise<string> {
-        let cpuCurrentSpeed = await si.cpuCurrentspeed();
+        let cpuCurrentSpeed = await readCpuCurrentSpeed(si);
         let unit = this._config.get('freq.unit', "GHz");
         let divisor: number = FreqMappings[unit];
         let currentSpeed = await this.getCurrentSpeedHz();
@@ -287,7 +292,8 @@ class Battery extends Resource {
     }
 
     protected async isShown(): Promise<boolean> {
-        let hasBattery = (await si.battery()).hasbattery;
+        let battery = await si.battery();
+        let hasBattery = battery.hasBattery !== undefined ? battery.hasBattery : battery.hasbattery;
         return Promise.resolve(hasBattery && this._config.get("show.battery", false));
     }
 
@@ -302,10 +308,11 @@ class Battery extends Resource {
         let lines = [
             "Battery",
             `Charge: ${Math.min(Math.max(battery.percent, 0), 100)}%`,
-            `Status: ${battery.ischarging ? "Charging" : "Discharging"}`
+            `Status: ${(battery.isCharging !== undefined ? battery.isCharging : battery.ischarging) ? "Charging" : "Discharging"}`
         ];
-        if (battery.timeremaining >= 0) {
-            lines.push(`Estimated time remaining: ${battery.timeremaining} minutes`);
+        let timeRemaining = battery.timeRemaining !== undefined ? battery.timeRemaining : battery.timeremaining;
+        if (timeRemaining !== null && timeRemaining !== undefined && timeRemaining >= 0) {
+            lines.push(`Estimated time remaining: ${timeRemaining} minutes`);
         }
         return lines.join("\n");
     }
@@ -336,6 +343,67 @@ class Memory extends Resource {
             `Total: ${this.convertBytesToLargestUnit(memoryData.total)}`,
             `Swap: ${this.convertBytesToLargestUnit(memoryData.swapused)}/${this.convertBytesToLargestUnit(memoryData.swaptotal)} used`
         ].join("\n");
+    }
+}
+
+class Gpu extends Resource {
+    private _gpus: GpuMetrics[] = [];
+    private _nextWindowsSampleAttempt: number = 0;
+
+    constructor(config: WorkspaceConfiguration) {
+        super(config, false, "gpu");
+    }
+
+    private getWindowsGpuMetrics(controllers: any[]): Promise<GpuMetrics[] | null> {
+        if (process.platform !== "win32" || Date.now() < this._nextWindowsSampleAttempt) {
+            return Promise.resolve(null);
+        }
+
+        let childProcess = require("child_process");
+        let command = "$ErrorActionPreference='Stop'; $engines=@(); $memory=@(); $systemMemory=$null; " +
+            "try { $engines=@(Get-CimInstance -ClassName Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine | Select-Object Name,UtilizationPercentage) } catch {}; " +
+            "try { $memory=@(Get-CimInstance -ClassName Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory | Select-Object Name,DedicatedUsage,SharedUsage) } catch {}; " +
+            "try { $systemMemory=(Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory } catch {}; " +
+            "[pscustomobject]@{Engines=$engines;Memory=$memory;SystemMemoryTotal=$systemMemory} | ConvertTo-Json -Depth 4 -Compress";
+
+        return new Promise<GpuMetrics[] | null>((resolve) => {
+            childProcess.execFile("powershell.exe", ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command],
+                { timeout: 3000 }, (error: any, stdout: string) => {
+                    if (error || !stdout.trim()) {
+                        this._nextWindowsSampleAttempt = Date.now() + 60000;
+                        resolve(null);
+                        return;
+                    }
+                    try {
+                        let metrics = parseWindowsGpuCounters(stdout, controllers);
+                        if (metrics.length === 0) {
+                            this._nextWindowsSampleAttempt = Date.now() + 60000;
+                        } else {
+                            this._nextWindowsSampleAttempt = 0;
+                        }
+                        resolve(metrics);
+                    } catch (parseError) {
+                        this._nextWindowsSampleAttempt = Date.now() + 60000;
+                        resolve(null);
+                    }
+                });
+        });
+    }
+
+    async getDisplay(): Promise<string> {
+        try {
+            let graphics = await si.graphics();
+            let controllers = graphics.controllers || [];
+            let windowsMetrics = await this.getWindowsGpuMetrics(controllers);
+            this._gpus = windowsMetrics === null ? normalizeGpuControllers(controllers) : windowsMetrics;
+        } catch (error) {
+            this._gpus = [];
+        }
+        return formatGpuDisplay(this._gpus, this.getPrecision());
+    }
+
+    protected async getTooltip(): Promise<string> {
+        return formatGpuTooltip(this._gpus, this.getPrecision());
     }
 }
 
@@ -546,6 +614,7 @@ class ResMon {
         this._resources.push(new CpuFreq(this._config));
         this._resources.push(new Battery(this._config));
         this._resources.push(new Memory(this._config));
+        this._resources.push(new Gpu(this._config));
         this._resources.push(new DiskSpace(this._config));
         this._resources.push(new CpuTemp(this._config));
         this._resources.push(new Network(this._config));

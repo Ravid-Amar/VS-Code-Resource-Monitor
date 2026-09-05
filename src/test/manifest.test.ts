@@ -34,6 +34,7 @@ describe('extension manifest', () => {
             'resmon.show.cpuusage',
             'resmon.show.cpufreq',
             'resmon.show.mem',
+            'resmon.show.gpu',
             'resmon.show.battery',
             'resmon.show.disk',
             'resmon.show.net',

@@ -8,6 +8,13 @@ function requireFinite(name, value, minimum, maximum) {
     }
 }
 
+function optionalMetric(value, minimum, maximum) {
+    let metric = Number(value);
+    return value === null || value === undefined || !Number.isFinite(metric) || metric < minimum || metric > maximum
+        ? null
+        : metric;
+}
+
 function wait(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
@@ -24,7 +31,8 @@ async function verify() {
     await wait(1100);
 
     let cpu = await si.currentLoad();
-    requireFinite('CPU load', Number(cpu.currentload), 0, 100);
+    let cpuLoad = cpu.currentLoad !== undefined ? cpu.currentLoad : cpu.currentload;
+    requireFinite('CPU load', Number(cpuLoad), 0, 100);
     (cpu.cpus || []).forEach((core, index) => requireFinite(`CPU core ${index + 1}`, Number(core.load), 0, 100));
 
     let memory = await si.mem();
@@ -58,8 +66,17 @@ async function verify() {
         throw new Error('No usable network interfaces were reported');
     }
 
+    let graphics = await si.graphics();
+    let gpus = (graphics.controllers || []).map((controller, index) => ({
+        name: controller.name || controller.model || `GPU ${index + 1}`,
+        utilizationPercent: optionalMetric(controller.utilizationGpu, 0, 100),
+        memoryUsedMb: optionalMetric(controller.memoryUsed, 0, Number.MAX_SAFE_INTEGER),
+        memoryTotalMb: optionalMetric(controller.memoryTotal, 0, Number.MAX_SAFE_INTEGER),
+        temperatureC: optionalMetric(controller.temperatureGpu, 0, 200)
+    }));
+
     console.log(JSON.stringify({
-        cpuPercent: Number(cpu.currentload.toFixed(2)),
+        cpuPercent: Number(Number(cpuLoad).toFixed(2)),
         logicalProcessors: (cpu.cpus || []).length,
         memory: {
             activeBytes: memory.active,
@@ -69,7 +86,8 @@ async function verify() {
             volume: fileSystem.mount || fileSystem.fs,
             usedPercent: fileSystem.use
         })),
-        network: network
+        network: network,
+        gpus: gpus
     }, null, 2));
 }
 

@@ -1,25 +1,67 @@
-name: CI
+name: CI/CD
 
 on:
   push:
     branches: [ master ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js 20
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Lint
+        run: npm run lint
       - name: Compile and test
         run: npm test
       - name: Validate extension data sources
         run: npm run verify:data
+      - name: Verify release tag matches package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: node -e "const expected = 'v' + require('./package.json').version; if (process.env.GITHUB_REF_NAME !== expected) { throw new Error('Release tag ' + process.env.GITHUB_REF_NAME + ' must equal ' + expected); }"
+      - name: Package extension
+        run: npx --yes @vscode/vsce@3.9.2 package --allow-star-activation --out system-metrics-lens.vsix
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-metrics-lens-${{ github.sha }}
+          path: system-metrics-lens.vsix
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish to Visual Studio Marketplace
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: vscode-marketplace
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download tested VSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: system-metrics-lens-${{ github.sha }}
+      - name: Publish tested VSIX
+        run: npx --yes @vscode/vsce@3.9.2 publish --oidc --packagePath system-metrics-lens.vsix

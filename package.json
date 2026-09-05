@@ -2,7 +2,7 @@
     "name": "resources-monitor",
     "displayName": "System Metrics Lens",
     "description": "Displays CPU, memory, disk, network, and battery statistics in the VS Code status bar.",
-    "version": "1.0.16",
+    "version": "1.0.17",
     "publisher": "RavidAmar",
     "engines": {
         "vscode": "^1.25.0"
@@ -45,6 +45,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Toggles the display of memory consumption."
+                },
+                "resmon.show.gpu": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Toggles GPU utilization, memory usage, and temperature. The indicator is hidden when the GPU driver does not expose live metrics."
                 },
                 "resmon.show.battery": {
                     "type": "boolean",
@@ -148,12 +153,13 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
+        "lint": "tslint -p tsconfig.json",
         "test": "npm run compile && mocha \"out/test/**/*.test.js\"",
         "verify:data": "npm run compile && node scripts/verify-data.js",
         "watch": "tsc -watch -p ./"
     },
     "dependencies": {
-        "systeminformation": "^4.27.11"
+        "systeminformation": "5.33.1"
     },
     "devDependencies": {
         "@types/mocha": "^2.2.42",

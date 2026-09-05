@@ -10,7 +10,7 @@ The maintained extension ID is `RavidAmar.resources-monitor`. It is intentionall
 
 ## Features
 
-Display CPU frequency, usage, memory consumption, disk usage, network inbound/outbound rates, and battery percentage remaining within the VSCode status bar. Disk usage is enabled by default and is shown in a compact, MobaXterm-style status-bar indicator for the partition that contains the current workspace.
+Display CPU frequency, usage, memory consumption, GPU metrics, disk usage, network inbound/outbound rates, and battery percentage remaining within the VSCode status bar. Disk usage is enabled by default and is shown in a compact, MobaXterm-style status-bar indicator for the partition that contains the current workspace.
 
 Hover any status-bar indicator for a detailed drilldown. CPU usage and frequency show every core, and disk usage lists every detected disk and partition.
 
@@ -20,13 +20,14 @@ Hover any status-bar indicator for a detailed drilldown. CPU usage and frequency
 
 ## Requirements
 
-There are no external runtime dependencies to install. Windows CPU readings use built-in PowerShell and CIM when available.
+There are no required external runtime dependencies to install. Windows CPU readings use built-in PowerShell and CIM when available. GPU metrics depend on the operating system and graphics driver; NVIDIA live metrics normally require the driver-provided `nvidia-smi` utility. The GPU indicator stays hidden when live metrics are unavailable.
 
 ## Extension Settings
 
 - `resmon.show.cpuusage`: Show CPU usage. On Windows, the extension uses the Processor Utility counter so the value follows Task Manager's CPU calculation; if that counter is unavailable, it falls back to processor time.
 - `resmon.show.cpufreq`: Show CPU Frequency. This may just display a static frequency on Windows.
 - `resmon.show.mem`: Show consumed and total memory as a fraction.
+- `resmon.show.gpu`: Show GPU utilization, used/total memory, and temperature when available. Disabled by default. With multiple GPUs, the status bar shows peak utilization and temperature plus aggregate memory, while the tooltip shows each device separately.
 - `resmon.show.battery`: Show battery percentage remaining.
 - `resmon.show.disk`: Show disk usage information.
 - `resmon.show.net`: Show network inbound and outbound rates.
@@ -54,3 +55,5 @@ npm run verify:data
 `npm test` runs deterministic unit and manifest tests. `npm run verify:data` performs a live sanity check against the current machine's CPU, memory, filesystem, and network data sources.
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
+
+See [PUBLISHING.md](PUBLISHING.md) for CI/CD, Marketplace trusted-publishing setup, and the release procedure.

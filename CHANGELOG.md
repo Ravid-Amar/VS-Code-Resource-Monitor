@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.0.17]
+- Added optional GPU utilization, memory, and temperature monitoring with multi-GPU tooltip details.
+- Added a Windows GPU Engine and Adapter Memory performance-counter fallback for systems where vendor tools do not expose live metrics.
+- Matched Windows integrated-GPU shared-memory reporting to Task Manager and filtered inactive or software GPU counter instances.
+- Upgraded `systeminformation` for current cross-platform graphics metrics and added GPU unit and live-data validation.
+- Preserved compatibility with the renamed `systeminformation` CPU-speed API and isolated resource refresh failures.
+- Hid the GPU indicator when hardware or drivers do not expose live metrics.
+
 ## [1.0.16]
 - Changed the display name to System Metrics Lens to distinguish it clearly from similarly named Marketplace extensions.
 
