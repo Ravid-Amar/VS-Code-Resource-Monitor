@@ -1,16 +1,16 @@
 # Publishing
 
-The `CI/CD` GitHub Actions workflow validates and packages every push and pull request. A push of a version tag also publishes the exact tested VSIX to the Visual Studio Marketplace through OpenID Connect (OIDC).
+The `CI/CD` GitHub Actions workflow validates and packages every push and pull request. A push of a version tag also publishes the exact tested VSIX to the Visual Studio Marketplace using a Personal Access Token stored as an encrypted GitHub Actions secret.
 
-## One-time trusted-publishing setup
+## One-time publishing setup
 
-1. In the GitHub repository settings, create an environment named `vscode-marketplace`. Add required reviewers if releases should require manual approval.
-2. In the Visual Studio Marketplace publisher portal for publisher `RavidAmar`, configure a trusted-publishing policy for:
-   - GitHub organization or user: `Ravid-Amar`
-   - Repository: `VS-Code-Resource-Monitor`
-   - Workflow: `.github/workflows/nodejs.yml`
-   - Environment: `vscode-marketplace`
-3. Do not add a Marketplace token to the repository. The publish job requests a short-lived credential for each tagged release and cannot run for pull requests.
+1. Create an Azure DevOps Personal Access Token that can publish extensions for Marketplace publisher `RavidAmar`. Grant only the Marketplace management scope required by `vsce`.
+2. Open the GitHub repository's **Settings → Secrets and variables → Actions** page.
+3. Create a repository secret named `VSCE_PAT` and paste the token as its value. Never commit or paste the token into an issue, log, workflow, or source file.
+
+The secret is exposed only to the tag-restricted publish job. Pull-request workflows cannot publish and do not receive the token.
+
+> Azure DevOps global PATs are scheduled for retirement on December 1, 2026. Replace this setup with Microsoft Entra ID or Marketplace trusted publishing when the required publisher UI becomes available.
 
 ## Release procedure
 
@@ -38,5 +38,5 @@ The build job rejects a tag that does not exactly match the version in `package.
 ## Failed releases
 
 - If validation or packaging fails, fix the source and create a new patch version and tag.
-- If publishing fails before the Marketplace accepts the version, correct the trusted-publishing configuration and rerun the failed job.
+- If publishing fails before the Marketplace accepts the version, correct or replace the `VSCE_PAT` secret and rerun the failed job.
 - If the Marketplace already accepted the version, never reuse it for different code; increment the patch version and create a new tag.

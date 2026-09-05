@@ -2,4 +2,4 @@
 
 ## Marketplace publishing setup
 
-- [ ] Configure the Marketplace trusted-publishing policy and the protected `vscode-marketplace` GitHub environment as described in `PUBLISHING.md`.
+- [ ] Add the Marketplace Personal Access Token as the `VSCE_PAT` GitHub Actions secret, as described in `PUBLISHING.md`.
